@@ -8,7 +8,7 @@ def extract_claim_id(pdf_path: Path) -> str:
 
     if match:
         return match.group(0).upper()
-    
+
     return "UNKNOWN_CLAIM"
 
 # Extract text from PDF
@@ -31,9 +31,9 @@ def process_pdfs(raw_dir: Path, processed_dir: Path) -> list[Path]:
     output_files = []
 
     if not pdf_files:
-        print(f"No PDF files found in {raw_dir}") 
+        print(f"No PDF files found in {raw_dir}")
         return output_files
-    
+
     for pdf_path in pdf_files:
         # Group each PDF output by the claim id found in the path
         claim_id = extract_claim_id(pdf_path)
@@ -46,14 +46,14 @@ def process_pdfs(raw_dir: Path, processed_dir: Path) -> list[Path]:
             print(f"Skipping already extracted PDF: {pdf_path.name} ({claim_id})")
             output_files.append(output_path)
             continue
-        
+
         extract_text = extract_text_from_pdf(pdf_path)
         output_path.write_text(extract_text, encoding="utf-8")
         output_files.append(output_path)
 
         print(f"Processed: {pdf_path.name} ({claim_id})")
         print(f"Saved text to: {output_path}")
-    
+
     return output_files
 
 # Combine Claim Texts
@@ -64,15 +64,15 @@ def combine_claim_texts(processed_dir: Path) -> list[Path]:
     combined_files = []
 
     if not extracted_text_dir.exists():
-        print(f"No extracted text folder found in {extracted_text_dir}") 
+        print(f"No extracted text folder found in {extracted_text_dir}")
         return combined_files
-    
+
     claim_dirs = sorted(path for path in extracted_text_dir.iterdir() if path.is_dir())
 
     if not claim_dirs:
         print(f"No Claim folders found in {extracted_text_dir}")
         return combined_files
-    
+
     for claim_dir in claim_dirs:
         text_files = sorted(claim_dir.glob("*.txt"))
 
@@ -102,7 +102,7 @@ def combine_claim_texts(processed_dir: Path) -> list[Path]:
                     ]
                 )
             )
-        output_path.write_text("\n".join(combined_parts).strip(), encoding="utf-8")    
+        output_path.write_text("\n".join(combined_parts).strip(), encoding="utf-8")
         combined_files.append(output_path)
         print(f"Combined claim text created: {output_path}")
 
