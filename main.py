@@ -15,10 +15,24 @@ from src.extraction.claim_extractor import (
     save_claim_records,
     save_claim_records_csv
 )
+
 from src.validation.processing_summary import (
     build_processing_summary,
     save_processing_summary
 )
+
+from src.agents.simple_agent import (
+    print_agent_response,
+    run_document_agent,
+    save_agent_responses
+)
+
+from src.agents.llm_agent import (
+    print_llm_agent_response,
+    run_llm_document_agent,
+    save_llm_agent_responses
+)
+
 
 def main():
     """Run the document pipeline from raw PDFs to cleaned claim text"""
@@ -150,6 +164,57 @@ def main():
         }
     )
     save_processing_summary(output_dir=output_dir, summary=processing_summary)
+
+    # Step 17: Run a simple agentic workflow over the generated artifacts
+    print("Running simple document agent demos...")
+    agent_requests = [
+        "Give me a processing summary",
+        "Is the dataset ML-ready?",
+        "Show rejected claims",
+        f"What is the diagnosis mentioned for claim ID {claim_id}?"
+    ]
+    agent_responses = []
+    for agent_request in agent_requests:
+        agent_response = run_document_agent(
+            settings=settings,
+            user_request=agent_request
+        )
+        print_agent_response(agent_response=agent_response)
+        agent_responses.append(agent_response)
+
+    print("Saving agent responses...")
+    save_agent_responses(
+        output_dir=output_dir,
+        agent_responses=agent_responses
+    )
+
+    # Step 18: Run an LLM-based agent that selects from the safe project tools.
+    print("Running LLM document agent demos...")
+    llm_agent_requests = [
+        "Show pending claims",
+        "Is the dataset ML-ready?",
+        "What is the policy number?",
+        "What is the policy number for claim CLM2024002193?",
+        "Show rejected claims where total claim amount is greater than 100000",
+        "Show top 3 claims by total claim amount",
+        "Show claims where approved amount is less than total claim amount",
+        "Delete rejected claims from the dataset",
+    ]
+    llm_agent_responses = []
+
+    for llm_agent_request in llm_agent_requests:
+        llm_agent_response = run_llm_document_agent(
+            settings=settings,
+            user_request=llm_agent_request,
+        )
+        print_llm_agent_response(agent_response=llm_agent_response)
+        llm_agent_responses.append(llm_agent_response)
+
+    print("Saving LLM agent responses...")
+    save_llm_agent_responses(
+        output_dir=output_dir,
+        agent_responses=llm_agent_responses,
+    )
 
 if __name__ == "__main__":
     main()
