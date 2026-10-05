@@ -6,6 +6,7 @@ from src.preprocessing.text_chunker import chunk_cleaned_claims, validate_chunk_
 from src.preprocessing.text_cleaner import clean_combined_claims
 from src.rag.chunk_loader import load_all_chunks, save_chunk_manifest
 from src.rag.vector_store import build_vector_store, print_search_results, search_vector_store
+from src.rag.qa_pipeline import print_rag_answer, run_rag_question, save_rag_responses
 
 def main():
     """Run the document pipeline from raw PDFs to cleaned claim text"""
@@ -13,6 +14,7 @@ def main():
     project_root = Path(__file__).resolve().parent
     raw_dir = project_root / "data" / "raw"
     processed_dir = project_root / "data" / "processed"
+    output_dir = settings.output_data_dir
 
     # Step 1: Extract tect from each pdf and save one text file per document:
     print("Starting PDF ingestion...")
@@ -51,9 +53,42 @@ def main():
     print(f"Vector store created. Created or Updated : {vector_store_created}")
 
     # Step 8: Run a sample semantic search against the vector store
+    claim_id = "CLM2024001847"
     sample_query = "What is the total claim amount?"
-    search_results = search_vector_store(settings=settings, query=sample_query)
+    search_results = search_vector_store(
+        settings=settings,
+        query=sample_query,
+        top_k=3,
+        claim_id=claim_id
+    )
     print_search_results(query=sample_query, results=search_results)
+
+    # Step 9: Ask multiple grounded RAG questions using retrieval + LLM
+    print("Generating RAG Answers")
+    sample_questions = [
+        "What is the total claim amount?",
+        "What diagnosis is mentioned in the claim documents?",
+        "What is the policy number?",
+        "What is the patient's passport number?",
+        "Who is Bill Gates?",
+    ]
+
+    rag_responses = []
+    for question in sample_questions:
+        rag_answer = run_rag_question(
+            settings=settings,
+            question=question,
+            claim_id=claim_id,
+            use_cache=True
+        )
+        print_rag_answer(rag_response=rag_answer)
+
+        if rag_answer:
+            rag_responses.append(rag_answer)
+
+    # Step 10: Save RAG answers to cache
+    print("Saving RAG answers.....")
+    save_rag_responses(output_dir=output_dir, rag_responses=rag_responses)
 
 if __name__ == "__main__":
     main()

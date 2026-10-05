@@ -84,6 +84,7 @@ def search_vector_store(
         settings: AppSettings,
         query: str,
         top_k: int = 3,
+        claim_id: str | None = None
     ) -> list[dict]:
 
     if not validate_openai_settings(settings):
@@ -94,17 +95,20 @@ def search_vector_store(
     collection = create_chroma_collection(settings.processed_data_dir)
     query_embedding = embedding_client.embed_query(query)
 
+    where_filter = {"claim_id": claim_id} if claim_id else None
+
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results = top_k,
+        n_results=top_k,
+        where=where_filter,
         include=["documents", "metadatas", "distances"]
     )
 
     retrieved_chunks = []
     ids = results.get("ids", [[]])[0]
-    documents  = results.get("documents", [[]])[0]
-    metadatas  = results.get("metadatas", [[]])[0]
-    distances  = results.get("distances", [[]])[0]
+    documents = results.get("documents", [[]])[0]
+    metadatas = results.get("metadatas", [[]])[0]
+    distances = results.get("distances", [[]])[0]
 
     for chunk_id, document, metadata, distance in zip(
         ids,
@@ -122,7 +126,6 @@ def search_vector_store(
         )
 
     return retrieved_chunks
-
 # Print search results
 def print_search_results(query: str, results: list[dict]) -> None:
     if not results:
